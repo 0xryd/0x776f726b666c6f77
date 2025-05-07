@@ -74,7 +74,7 @@ jobs:
           export TZ="Asia/Jakarta"
           current_time=$(date '+%Y-%m-%d %H:%M:%S')
           echo "Updated on $current_time (UTC+7)" > TIMESTAMP.txt
-		  git add TIMESTAMP.txt
+	  git add TIMESTAMP.txt
 
       - name: Setup Git Configuration
         run: |
