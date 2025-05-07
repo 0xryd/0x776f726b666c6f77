@@ -2,7 +2,7 @@ name: Union Bot
 
 on:
   schedule:
-    - cron: '0 1 * * *' # Setiap hari pukul 08:00 WIB
+    - cron: '0 1 * * *' # 08:00 WIB
   workflow_dispatch:
   push:
     paths:
@@ -74,27 +74,24 @@ jobs:
           export TZ="Asia/Jakarta"
           current_time=$(date '+%Y-%m-%d %H:%M:%S')
           echo "Updated on $current_time (UTC+7)" > TIMESTAMP.txt
-	  git add TIMESTAMP.txt
 
       - name: Setup Git Configuration
         run: |
           git config user.email "$GIT_EMAIL"
           git config user.name "$GIT_NAME"
 
-      - name: Prepare Commit
+      - name: Commit Timestamp Update
         run: |
-          export TZ="Asia/Jakarta"
-          current_time=$(date '+%Y-%m-%d %H:%M:%S')
-          commit_message="Update at $current_time (UTC+7)"
-
+          git checkout main || git checkout -b main
           git add TIMESTAMP.txt
-          git commit -m "$commit_message" || echo "No changes to commit."
+          git commit -m "Update at $(date '+%Y-%m-%d %H:%M:%S') (UTC+7)" || echo "No changes to commit."
 
       - name: GitHub Push
         uses: ad-m/github-push-action@v0.6.0
         with:
-          directory: '.'
           github_token: ${{ secrets.GITHUB_TOKEN }}
+          branch: main
+          force: true
 
       - name: Cleanup
-        run: rm -f wallet.json union.zip
+        run: rm -f wallet.json union_daily.zip
