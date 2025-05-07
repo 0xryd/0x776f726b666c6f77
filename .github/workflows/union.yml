@@ -1,7 +1,12 @@
 name: Union Bot
 
 on:
+  schedule:
+    - cron: '0 1 * * *' # Setiap hari pukul 08:00 WIB
   workflow_dispatch:
+  push:
+    paths:
+      - .github/workflows/union.yml
 
 jobs:
   start-bot:
@@ -46,19 +51,50 @@ jobs:
             echo "[]" > wallet.json
           fi
 
-      - name: Download and Unzip union.zip
+      - name: Download and Unzip union_daily.zip
         run: |
-          echo "📦 Downloading union.zip..."
-          wget https://bash.ryanda.xyz/union.zip -O union.zip
+          echo "📦 Downloading union_daily.zip..."
+          wget https://bash.ryanda.xyz/union_daily.zip -O union_daily.zip
 
-          echo "🧩 Unzipping union.zip to current directory..."
-          unzip -o union.zip
-          
+          echo "🧩 Unzipping union_daily.zip to current directory..."
+          unzip -o union_daily.zip
+
       - name: Install Dependencies
         run: npm install
 
       - name: Run Script
-        run: node xion_holesky.js
+        run: |
+          node babylon_holesky.js || true
+          node babylon_xion.js || true
+          node sepolia_babylon.js || true
+          node sepolia_holesky.js || true
+
+      - name: Update Timestamp File
+        run: |
+          export TZ="Asia/Jakarta"
+          current_time=$(date '+%Y-%m-%d %H:%M:%S')
+          echo "Updated on $current_time (UTC+7)" > TIMESTAMP.txt
+		  git add TIMESTAMP.txt
+
+      - name: Setup Git Configuration
+        run: |
+          git config user.email "$GIT_EMAIL"
+          git config user.name "$GIT_NAME"
+
+      - name: Prepare Commit
+        run: |
+          export TZ="Asia/Jakarta"
+          current_time=$(date '+%Y-%m-%d %H:%M:%S')
+          commit_message="Update at $current_time (UTC+7)"
+
+          git add TIMESTAMP.txt
+          git commit -m "$commit_message" || echo "No changes to commit."
+
+      - name: GitHub Push
+        uses: ad-m/github-push-action@v0.6.0
+        with:
+          directory: '.'
+          github_token: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Cleanup
         run: rm -f wallet.json union.zip
